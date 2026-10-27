@@ -55,3 +55,12 @@ test('zoom is clamped to 1..5', () => {
   assert.equal(clampZoom(Number.NaN), 1);
   assert.deepEqual(coverCrop(2000, 1000, 100, 100, { zoom: 0.5 }), coverCrop(2000, 1000, 100, 100));
 });
+
+test('panBy converts a pointer drag in slot pixels to pan', async () => {
+  const { panBy } = await import('../../src/renderer/core/crop.js');
+  const photo = { zoom: 1, panX: 0, panY: 0 };
+  // 4000x2000 into 500x500: 2000px of spare width, 4 source px per slot px.
+  assert.deepEqual(panBy(photo, 4000, 2000, 500, 500, 125, 40), { panX: -0.5, panY: 0 });
+  assert.deepEqual(panBy(photo, 4000, 2000, 500, 500, -9999, 0), { panX: 1, panY: 0 });
+  assert.deepEqual(panBy({ ...photo, panY: 0.3 }, 1000, 1000, 500, 500, 10, 10), { panX: 0, panY: 0.3 }, 'no spare: unchanged');
+});

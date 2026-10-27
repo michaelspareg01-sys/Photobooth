@@ -28,3 +28,16 @@ export function coverCrop(srcW, srcH, dstW, dstH, { zoom = 1, panX = 0, panY = 0
     sh,
   };
 }
+
+// Turns a pointer drag of (dxPx, dyPx) slot pixels into a new pan, so the
+// photo follows the pointer. Axes with no spare image stay where they are.
+export function panBy(photo, srcW, srcH, dstW, dstH, dxPx, dyPx) {
+  const { sw, sh } = coverCrop(srcW, srcH, dstW, dstH, photo);
+  const spareX = srcW - sw;
+  const spareY = srcH - sh;
+  const shift = (pan, d, s, dst, spare) => (spare > 1e-9 ? clampPan(pan - (d * (s / dst)) / (spare / 2)) : pan);
+  return {
+    panX: shift(photo.panX, dxPx, sw, dstW, spareX),
+    panY: shift(photo.panY, dyPx, sh, dstH, spareY),
+  };
+}
