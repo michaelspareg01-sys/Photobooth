@@ -21,15 +21,28 @@
   "build": {
     "appId": "com.photobooth.app",
     "productName": "Photobooth",
-    "files": ["src/**/*", "package.json"],
-    "directories": { "output": "dist" },
+    "files": [
+      "src/**/*",
+      "package.json"
+    ],
+    "directories": {
+      "output": "dist"
+    },
     "mac": {
       "category": "public.app-category.photography",
       "extendInfo": {
         "NSCameraUsageDescription": "Photobooth uses your camera to take booth photos."
-      }
+      },
+      "hardenedRuntime": true,
+      "entitlements": "build/entitlements.mac.plist",
+      "entitlementsInherit": "build/entitlements.mac.plist"
     },
-    "win": { "target": "nsis" },
-    "linux": { "target": "AppImage", "category": "Graphics" }
+    "win": {
+      "target": "nsis"
+    },
+    "linux": {
+      "target": "AppImage",
+      "category": "Graphics"
+    }
   }
 }

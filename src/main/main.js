@@ -33,17 +33,31 @@ function createWindow() {
   win.loadFile(path.join(here, '..', 'renderer', 'index.html'));
 }
 
-// Only the camera is ever granted, and only to our own page.
-function allowCameraOnly(webContents, permission) {
-  return permission === 'media' && webContents === win?.webContents;
+const isOurPage = (webContents) => webContents === win?.webContents;
+
+// Only the camera (never the microphone) is granted, and only to our own page.
+function allowCameraRequest(webContents, permission, details) {
+  const types = details?.mediaTypes ?? [];
+  return isOurPage(webContents) && permission === 'media' && types.length > 0 && types.every((t) => t === 'video');
 }
 
-ipcMain.handle('request-camera', async () => {
+function allowCameraCheck(webContents, permission, details) {
+  return isOurPage(webContents) && permission === 'media' && details?.mediaType !== 'audio';
+}
+
+// IPC is only answered for our own top-level page.
+function fromOurPage(event) {
+  return isOurPage(event.sender) && event.senderFrame === event.sender.mainFrame;
+}
+
+ipcMain.handle('request-camera', async (event) => {
+  if (!fromOurPage(event)) return false;
   if (process.platform !== 'darwin') return true;
   return systemPreferences.askForMediaAccess('camera');
 });
 
-ipcMain.handle('save-image', async (_event, { bytes, defaultName } = {}) => {
+ipcMain.handle('save-image', async (event, { bytes, defaultName } = {}) => {
+  if (!fromOurPage(event)) throw new Error('Unexpected sender');
   if (!(bytes instanceof Uint8Array) || typeof defaultName !== 'string') {
     throw new Error('Invalid save request');
   }
@@ -61,8 +75,8 @@ ipcMain.handle('save-image', async (_event, { bytes, defaultName } = {}) => {
 });
 
 app.whenReady().then(() => {
-  session.defaultSession.setPermissionRequestHandler((wc, permission, callback) => callback(allowCameraOnly(wc, permission)));
-  session.defaultSession.setPermissionCheckHandler((wc, permission) => allowCameraOnly(wc, permission));
+  session.defaultSession.setPermissionRequestHandler((wc, permission, callback, details) => callback(allowCameraRequest(wc, permission, details)));
+  session.defaultSession.setPermissionCheckHandler((wc, permission, _origin, details) => allowCameraCheck(wc, permission, details));
   createWindow();
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();

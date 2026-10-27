@@ -1,14 +1,16 @@
 import { MAX_PHOTOS, addPhotos, removePhoto, movePhoto, updatePhoto, slotCount } from '../core/state.js';
 import { $, el, thumbnail } from './dom.js';
 
-const MAX_SIDE = 3000; // decoded photos are capped to save memory; output slots are far smaller
+// Decoded photos are capped at 16 MP (64 MB each) to bound memory. Capping by
+// pixel count rather than longest side keeps panoramas sharp in tall slots.
+const MAX_PIXELS = 16_000_000;
 const IMAGE_NAME = /\.(jpe?g|png|gif|webp|bmp|avif)$/i;
 
 export async function decodeImage(blob) {
   let bitmap = await createImageBitmap(blob, { imageOrientation: 'from-image' });
-  const longest = Math.max(bitmap.width, bitmap.height);
-  if (longest > MAX_SIDE) {
-    const scale = MAX_SIDE / longest;
+  const pixels = bitmap.width * bitmap.height;
+  if (pixels > MAX_PIXELS) {
+    const scale = Math.sqrt(MAX_PIXELS / pixels);
     const small = await createImageBitmap(bitmap, {
       resizeWidth: Math.round(bitmap.width * scale),
       resizeHeight: Math.round(bitmap.height * scale),
@@ -26,7 +28,16 @@ export function setupPhotos({ store, images, toast }) {
   const hint = $('#photo-hint');
   const overlay = $('#drop-overlay');
 
-  async function addFiles(fileList) {
+  // Uploads run one batch at a time so two quick drops can't both claim the
+  // same free slots.
+  let queue = Promise.resolve();
+  function addFiles(fileList) {
+    const files = [...fileList];
+    queue = queue.then(() => addBatch(files));
+    return queue;
+  }
+
+  async function addBatch(fileList) {
     const files = [...fileList].filter((f) => f.type.startsWith('image/') || IMAGE_NAME.test(f.name));
     if (!files.length) return;
     const room = MAX_PHOTOS - store.getState().photos.length;
@@ -101,7 +112,9 @@ export function setupPhotos({ store, images, toast }) {
           if (dragIndex === null) return;
           e.preventDefault();
           e.stopPropagation();
-          store.update((s) => movePhoto(s, dragIndex, i));
+          const from = dragIndex;
+          dragIndex = null;
+          store.update((s) => movePhoto(s, from, i));
         },
       }, [
         image ? thumbnail(image, 168, 126) : el('canvas', { width: 168, height: 126 }),
@@ -120,8 +133,18 @@ export function setupPhotos({ store, images, toast }) {
     }));
   }
 
-  store.subscribe((state, prev) => {
-    if (state.photos !== prev.photos || state.layout !== prev.layout || state.photoCount !== prev.photoCount) renderTray(state);
+  // Rebuild only when something the tray shows changes, not on every pan step.
+  const trayKey = (state) => [
+    slotCount(state),
+    ...state.photos.map((p) => `${p.id}:${p.zoom !== 1 || p.panX !== 0 || p.panY !== 0}`),
+  ].join('|');
+  let shown = trayKey(store.getState());
+  store.subscribe((state) => {
+    const key = trayKey(state);
+    if (key !== shown) {
+      shown = key;
+      renderTray(state);
+    }
   });
   renderTray(store.getState());
 

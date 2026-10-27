@@ -13,7 +13,6 @@ export const MAX_SIZE = 0.6;
 let nextId = 1;
 
 const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
-const wrapDegrees = (deg) => ((((deg + 180) % 360) + 360) % 360) - 180;
 
 export function clampSticker(s) {
   return {
@@ -21,7 +20,7 @@ export function clampSticker(s) {
     x: clamp(s.x, 0, 1),
     y: clamp(s.y, 0, 1),
     size: clamp(s.size, MIN_SIZE, MAX_SIZE),
-    rotation: wrapDegrees(s.rotation),
+    rotation: clamp(s.rotation, -180, 180),
   };
 }
 

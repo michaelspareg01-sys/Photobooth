@@ -65,14 +65,19 @@ export function setupExport({ store, images, toast }) {
     const layout = computeLayout(state.layout, { photoCount: state.photoCount });
     const widthIn = layout.width / DPI;
     const heightIn = layout.height / DPI;
-    const bytes = await encodeFrame(state, images, 'png');
-    const url = URL.createObjectURL(new Blob([bytes], { type: 'image/png' }));
-    pageSheet.replaceSync(`@page { size: ${widthIn}in ${heightIn}in; margin: 0; }`);
-    printImage.style.width = `${widthIn}in`;
-    printImage.style.height = `${heightIn}in`;
-    printImage.src = url;
-    await printImage.decode().catch(() => {});
-    window.print();
-    URL.revokeObjectURL(url);
+    try {
+      const bytes = await encodeFrame(state, images, 'png');
+      const url = URL.createObjectURL(new Blob([bytes], { type: 'image/png' }));
+      pageSheet.replaceSync(`@page { size: ${widthIn}in ${heightIn}in; margin: 0; }`);
+      printImage.style.width = `${widthIn}in`;
+      printImage.style.height = `${heightIn}in`;
+      printImage.src = url;
+      await printImage.decode();
+      // Keep the image until printing has finished reading it.
+      window.addEventListener('afterprint', () => URL.revokeObjectURL(url), { once: true });
+      window.print();
+    } catch (err) {
+      toast(`Could not print: ${err.message}`, 'error');
+    }
   });
 }

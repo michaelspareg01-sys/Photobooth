@@ -32,8 +32,12 @@ test('moveSticker shifts and clamps to the frame', () => {
   assert.equal(s.x, 0.9, 'original untouched');
 });
 
-test('clampSticker bounds size and wraps rotation', () => {
+test('clampSticker bounds position, size and rotation', () => {
   const s = clampSticker({ id: 1, emoji: '⭐', x: -2, y: 3, size: 4, rotation: 270 });
-  assert.deepEqual(s, { id: 1, emoji: '⭐', x: 0, y: 1, size: 0.6, rotation: -90 });
+  assert.deepEqual(s, { id: 1, emoji: '⭐', x: 0, y: 1, size: 0.6, rotation: 180 });
   assert.equal(clampSticker({ ...s, size: 0 }).size, 0.05);
+  // The rotation slider runs -180..180; its ends must not flip to each other.
+  assert.equal(clampSticker({ ...s, rotation: 180 }).rotation, 180);
+  assert.equal(clampSticker({ ...s, rotation: -180 }).rotation, -180);
+  assert.equal(clampSticker({ ...s, rotation: -300 }).rotation, -180);
 });

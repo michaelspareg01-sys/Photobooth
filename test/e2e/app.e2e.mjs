@@ -160,6 +160,35 @@ test('polaroid and double strip layouts use real print sizes', async () => {
   await page.screenshot({ path: path.join(out, 'double-strip.png') });
 });
 
+test('on the double strip, a drag across the middle keeps moving smoothly', async () => {
+  // Layout is double with 3 photos; slot 1 holds the red-to-yellow gradient.
+  const box = await page.locator('#preview').boundingBox();
+  const k = box.width / 1200;
+  const before = await pixel(300, 270);
+  await settle(async () => {
+    await page.mouse.move(box.x + 500 * k, box.y + 270 * k);
+    await page.mouse.down();
+    for (let x = 520; x <= 640; x += 20) await page.mouse.move(box.x + x * k, box.y + 270 * k);
+    await page.mouse.up();
+  });
+  const after = await pixel(300, 270);
+  assert.ok(after[1] < before[1] - 10, `photo followed the pointer right (green ${before[1]} -> ${after[1]})`);
+  await settle(() => page.click('#tray li:nth-child(1) button[aria-label="Reset framing"]'));
+});
+
+test('scrolling on a photo zooms it', async () => {
+  const box = await page.locator('#preview').boundingBox();
+  const k = box.width / 1200;
+  const edge = await pixel(40, 270);
+  await settle(async () => {
+    await page.mouse.move(box.x + 300 * k, box.y + 270 * k);
+    await page.mouse.wheel(0, -400);
+  });
+  const zoomed = await pixel(40, 270);
+  assert.ok(zoomed[1] > edge[1] + 10, `left edge moves toward the centre colour (green ${edge[1]} -> ${zoomed[1]})`);
+  await settle(() => page.click('#tray li:nth-child(1) button[aria-label="Reset framing"]'));
+});
+
 test('saves PNG and JPEG with 300 DPI metadata', async () => {
   const pngPath = path.join(out, 'export.png');
   await app.evaluate(({ dialog }, p) => { dialog.showSaveDialog = async () => ({ canceled: false, filePath: p }); }, pngPath);
