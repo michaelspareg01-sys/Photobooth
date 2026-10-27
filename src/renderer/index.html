@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' blob: data:; media-src 'self' blob: mediastream:; style-src 'self'; font-src 'self'; script-src 'self'; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <title>Photobooth</title>
+  <link rel="stylesheet" href="styles.css">
+  <script type="module" src="app.js"></script>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><span class="marquee" aria-hidden="true"></span>Photobooth</div>
+    <div class="export">
+      <label class="visually-hidden" for="export-format">File type</label>
+      <select id="export-format">
+        <option value="png">PNG</option>
+        <option value="jpg">JPEG</option>
+      </select>
+      <button id="print-btn" class="ghost" type="button">Print</button>
+      <button id="save-btn" class="primary" type="button">Save image</button>
+    </div>
+  </header>
+
+  <main class="workspace">
+    <aside class="panel left" aria-label="Photos">
+      <section>
+        <h2>Photos</h2>
+        <div class="source-buttons">
+          <button id="upload-btn" type="button" class="big">
+            <span class="icon" aria-hidden="true">⬆</span> Upload photos
+          </button>
+          <button id="camera-btn" type="button" class="big">
+            <span class="icon" aria-hidden="true">●</span> Camera booth
+          </button>
+        </div>
+        <input id="file-input" type="file" accept="image/*" multiple hidden>
+        <p class="hint" id="photo-hint"></p>
+        <ol id="tray" class="tray"></ol>
+      </section>
+    </aside>
+
+    <section class="stage" id="stage" aria-label="Preview">
+      <div class="canvas-wrap"><canvas id="preview" tabindex="0" aria-label="Photo booth preview"></canvas></div>
+      <p class="stage-hint">Drag a photo to reposition it, scroll to zoom. Drag stickers to move them, scroll on one to resize.</p>
+      <div id="drop-overlay" class="drop-overlay" hidden><span>Drop photos to add them</span></div>
+    </section>
+
+    <aside class="panel right" aria-label="Design">
+      <section>
+        <h2>Layout</h2>
+        <div class="seg" id="layout-options" role="group" aria-label="Layout"></div>
+        <div class="seg small" id="count-options" role="group" aria-label="Photos per strip"></div>
+        <label class="check" id="cut-line-row"><input type="checkbox" id="cut-line"> Crop marks between strips</label>
+      </section>
+
+      <section>
+        <h2>Filter</h2>
+        <div class="filter-grid" id="filter-options" role="group" aria-label="Filter"></div>
+      </section>
+
+      <section>
+        <h2>Frame</h2>
+        <div class="swatches" id="theme-options" role="group" aria-label="Frame theme"></div>
+        <label class="field">Pattern <select id="pattern"></select></label>
+        <div class="colors">
+          <label>Background <input type="color" id="bg-color"></label>
+          <label>Pattern <input type="color" id="pattern-color"></label>
+          <label>Text <input type="color" id="text-color"></label>
+        </div>
+      </section>
+
+      <section>
+        <h2>Caption</h2>
+        <input id="caption-text" type="text" maxlength="60" placeholder="Sam &amp; Alex · Summer Party" aria-label="Caption text">
+        <div class="seg" id="font-options" role="group" aria-label="Caption font"></div>
+        <label class="check"><input type="checkbox" id="show-date"> Date stamp</label>
+        <div class="row">
+          <input type="date" id="date" aria-label="Date">
+          <select id="date-format" aria-label="Date format"></select>
+        </div>
+      </section>
+
+      <section>
+        <h2>Stickers</h2>
+        <div class="sticker-grid" id="sticker-palette" role="group" aria-label="Add sticker"></div>
+        <div id="sticker-controls" class="sticker-controls" hidden>
+          <label class="field">Size <input type="range" id="sticker-size" min="0.05" max="0.6" step="0.01"></label>
+          <label class="field">Rotate <input type="range" id="sticker-rotation" min="-180" max="180" step="1"></label>
+          <div class="row">
+            <button id="sticker-front" type="button">Bring to front</button>
+            <button id="sticker-delete" type="button" class="danger">Delete</button>
+          </div>
+        </div>
+      </section>
+    </aside>
+  </main>
+
+  <dialog id="booth" aria-labelledby="booth-title">
+    <div class="booth">
+      <header>
+        <h2 id="booth-title">Camera booth</h2>
+        <button id="booth-close" type="button" class="ghost" aria-label="Close camera">✕</button>
+      </header>
+      <div class="viewfinder">
+        <video id="booth-video" autoplay playsinline muted></video>
+        <div id="booth-count" class="count" aria-live="assertive"></div>
+        <div id="booth-flash" class="flash"></div>
+        <p id="booth-error" class="booth-error" hidden></p>
+      </div>
+      <ol id="booth-shots" class="booth-shots"></ol>
+      <footer>
+        <label class="field inline">Countdown
+          <select id="booth-seconds">
+            <option value="3">3 s</option>
+            <option value="5">5 s</option>
+            <option value="10">10 s</option>
+          </select>
+        </label>
+        <label class="check"><input type="checkbox" id="booth-mirror" checked> Mirror</label>
+        <span id="booth-status" class="booth-status"></span>
+        <button id="booth-start" type="button" class="primary">Start</button>
+      </footer>
+    </div>
+  </dialog>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <img id="print-image" alt="">
+</body>
+</html>

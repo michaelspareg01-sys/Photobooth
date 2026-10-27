@@ -9,7 +9,7 @@
   "scripts": {
     "start": "electron .",
     "test": "node --test \"test/unit/*.test.js\"",
-    "test:e2e": "node test/e2e/app.e2e.mjs",
+    "test:e2e": "node --test test/e2e/app.e2e.mjs",
     "dist": "electron-builder",
     "dist:dir": "electron-builder --dir"
   },
