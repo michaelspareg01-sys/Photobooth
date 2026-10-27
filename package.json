@@ -1,0 +1,35 @@
+{
+  "name": "photobooth",
+  "productName": "Photobooth",
+  "version": "1.0.0",
+  "description": "Turn photos into photo booth strips and Polaroids.",
+  "type": "module",
+  "main": "src/main/main.js",
+  "license": "MIT",
+  "scripts": {
+    "start": "electron .",
+    "test": "node --test \"test/unit/*.test.js\"",
+    "test:e2e": "node test/e2e/app.e2e.mjs",
+    "dist": "electron-builder",
+    "dist:dir": "electron-builder --dir"
+  },
+  "devDependencies": {
+    "electron": "45.0.0",
+    "electron-builder": "^26.0.12",
+    "playwright-core": "1.63.0"
+  },
+  "build": {
+    "appId": "com.photobooth.app",
+    "productName": "Photobooth",
+    "files": ["src/**/*", "package.json"],
+    "directories": { "output": "dist" },
+    "mac": {
+      "category": "public.app-category.photography",
+      "extendInfo": {
+        "NSCameraUsageDescription": "Photobooth uses your camera to take booth photos."
+      }
+    },
+    "win": { "target": "nsis" },
+    "linux": { "target": "AppImage", "category": "Graphics" }
+  }
+}
